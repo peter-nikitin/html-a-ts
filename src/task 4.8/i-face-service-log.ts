@@ -1,3 +1,5 @@
+import { ReportBuilderVisitor } from './i-face-report-builder-vistior';
+
 export type Amount = number & { money: void };
 export const makeAmount = (value: number) => value as Amount;
 
@@ -44,4 +46,20 @@ export interface ServiceLogRecord {
   paid: Amount;
   //* скидка
   discount: Amount;
+}
+
+export class ServiceLogRecords {
+  records: ServiceLogRecord[];
+
+  constructor(records: ServiceLogRecord[]) {
+    this.records = records;
+  }
+
+  report<T>(reportBuilder: ReportBuilderVisitor<T>) {
+    return reportBuilder.report(
+      this.records.reduce(
+        reportBuilder.onLogStep, reportBuilder.initialReportState()
+      )
+    );
+  }
 }

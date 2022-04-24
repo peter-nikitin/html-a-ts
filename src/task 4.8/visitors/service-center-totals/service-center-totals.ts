@@ -1,23 +1,30 @@
-import { ServiceLogRecord } from '../../i-face-service-log';
+import { makeAmount, ServiceLogRecord } from '../../i-face-service-log';
+import { ReportBuilder } from '../../reportBuilder';
 import { ServiceCenterTotals, Totals } from './i-face-service-center-totals';
 
-
-export const serviceCenterTotals = (records: ServiceLogRecord[]):ServiceCenterTotals => {
-
-  const customerOutstandingMap = records.reduce((correlationAccumulator, currentLog) => {
-
-    const customerAmount: Totals = correlationAccumulator.get(currentLog.workshop) || {
-      totalIncome: 0,
-      vehicleCount: 0
+const makeNewValue = (reportStateTotal: Totals, total: number, workshop: string): ServiceCenterTotals => {
+  if (typeof reportStateTotal === 'undefined') {
+    return {
+      [workshop]: {
+        totalIncome: makeAmount(total),
+        vehicleCount: 1
+      }
     };
-
-    correlationAccumulator.set(currentLog.workshop, {
-      totalIncome: customerAmount.totalIncome +  currentLog.paid,
-      vehicleCount: customerAmount.vehicleCount + 1
-    } );
-
-    return correlationAccumulator;
-  }, new Map());
-
-  return customerOutstandingMap as ServiceCenterTotals;
+  } else {
+    return {
+      [workshop]: {
+        totalIncome: makeAmount(reportStateTotal.totalIncome + total),
+        vehicleCount: reportStateTotal.vehicleCount + 1
+      }
+    };
+  }
 };
+export class ServiceCenterTotalsReportBuilder extends ReportBuilder<ServiceCenterTotals> {
+  onLogStep(reportState: ServiceCenterTotals, logItem: ServiceLogRecord) {
+    const {workshop, total} = logItem;
+    return {
+      ...reportState,
+      ...makeNewValue(reportState[workshop], total, workshop )
+    };
+  }
+}

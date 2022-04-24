@@ -1,15 +1,17 @@
+import { ReportBuilderVisitor } from '../../i-face-report-builder-vistior';
 import { makeAmount, ServiceLogRecord } from '../../i-face-service-log';
+import { ReportBuilder } from '../../reportBuilder';
 import { CustomerOutstanding } from './i-face-customer-outstanding';
 
-export const customerOutstanding = (records: ServiceLogRecord[]): CustomerOutstanding => {
-  const customerOutstandingMap = records.reduce((correlationAccumulator, currentLog) => {
+const makeNewValue = (customerId: string, state: CustomerOutstanding, value: number) => ({
+  [customerId]: makeAmount((state[customerId] || 0) + value)
+});
+export class CustomerOutstandingsReportBuilder extends ReportBuilder<CustomerOutstanding> {
 
-    const customerAmount = correlationAccumulator.get(currentLog.customer) || 0;
-
-    correlationAccumulator.set(currentLog.customer, makeAmount(customerAmount + currentLog.paid) );
-
-    return correlationAccumulator;
-  }, new Map());
-
-  return customerOutstandingMap as CustomerOutstanding;
-};
+  onLogStep(reportState: CustomerOutstanding, logItem: ServiceLogRecord) {
+    return {
+      ...reportState,
+      ...makeNewValue(logItem.customer, reportState,logItem.paid - logItem.discount )
+    };
+  }
+}
