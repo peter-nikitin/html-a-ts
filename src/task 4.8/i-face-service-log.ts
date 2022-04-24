@@ -1,5 +1,6 @@
 export type Amount = number & { money: void };
 export const makeAmount = (value: number) => value as Amount;
+
 export type DateTime = string & { dateTime: void };
 export const makeDateTime = (value: string) => value as DateTime;
 
